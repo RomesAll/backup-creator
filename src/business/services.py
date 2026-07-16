@@ -28,3 +28,24 @@ class BackUpCreator:
         os.chown(backup_with_source, stat.st_uid, stat.st_gid)
         os.chmod(backup_with_source, stat.st_mode)
         os.utime(backup_with_source, (stat.st_mtime, stat.st_mtime))
+
+
+    @staticmethod
+    def scan_folders(path: Path):
+        for item in path.iterdir():
+            yield item
+            if item.is_dir():
+                yield from BackUpCreator.scan_folders(item)
+
+    @staticmethod
+    def generation_hash(file: Path) -> str:
+        if not file.exists():
+            raise Exception('File not found')
+        target_hasher = Sha256Hash()
+        with open(file, mode='rb') as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                target_hasher.append_hash_chunk(chunk)
+        return target_hasher.hashed_data
