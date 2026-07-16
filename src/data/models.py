@@ -50,3 +50,12 @@ class FileMetaInfo(MetaInfo):
             return value
         raise ValidationError(f"Хеш не подходит под паттерн '{pattern}'")
 
+def mapping_dto(path: Path) -> type[MetaInfo] | None:
+    mapping = {
+        path.is_file: FileMetaInfo,
+        path.is_dir: DirMetaInfo
+    }
+    for func, dto in mapping.items():
+        if func():
+            return dto
+    return None
