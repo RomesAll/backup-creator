@@ -19,3 +19,12 @@ class BackUpCreator:
         self.name_source_dir = self.source.parts[-1]
         self.repo = repository
         self.create_root_dir()
+
+    def create_root_dir(self):
+        source_dir = self.source.parts[-1]
+        backup_with_source = self.backup_path / source_dir
+        backup_with_source.mkdir(parents=True, exist_ok=True)
+        stat = os.stat(self.source)
+        os.chown(backup_with_source, stat.st_uid, stat.st_gid)
+        os.chmod(backup_with_source, stat.st_mode)
+        os.utime(backup_with_source, (stat.st_mtime, stat.st_mtime))
