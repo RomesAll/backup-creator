@@ -49,3 +49,13 @@ class BackUpCreator:
                     break
                 target_hasher.append_hash_chunk(chunk)
         return target_hasher.hashed_data
+
+    def construct_path_backup_file(self, target: Path) -> Path:
+        target_path_part = target.parts
+        backup_start = self.backup_path
+        target_start_ind = target_path_part.index(self.name_source_dir)
+        target_start = str('/'.join(
+            target_path_part[target_start_ind:]
+        ))
+        backup_full_file = Path(backup_start.resolve() / target_start)
+        return backup_full_file
