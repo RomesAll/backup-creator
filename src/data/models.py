@@ -14,3 +14,39 @@ class SourcePath(BaseModel):
         if not value.exists():
             raise FileNotFoundError('Ресурс для backup не найден')
         return value
+
+
+class MetaInfoGet(SourcePath):
+    target_path: Path
+
+    @field_validator('target_path')
+    @classmethod
+    def validate_path(cls, value: Path):
+        return super().validate_path(value)
+
+class MetaInfo(MetaInfoGet):
+    backup_path: Path
+    uid: int
+    gid: int
+    mode: int
+    mtime: float
+
+    @field_validator('backup_path')
+    @classmethod
+    def validate_path(cls, value: Path):
+        return super().validate_path(value)
+
+class DirMetaInfo(MetaInfo):
+    pass
+
+class FileMetaInfo(MetaInfo):
+    hash: str
+
+    @field_validator('hash')
+    @classmethod
+    def validate_hash(cls, value: str):
+        pattern = r"[0-9A-Fa-f]{64}"
+        if bool(re.match(pattern, value)):
+            return value
+        raise ValidationError(f"Хеш не подходит под паттерн '{pattern}'")
+
