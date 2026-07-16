@@ -59,3 +59,44 @@ class BackUpCreator:
         ))
         backup_full_file = Path(backup_start.resolve() / target_start)
         return backup_full_file
+
+
+    def refresh_stat(
+            self,
+            target: Path,
+            backup: Path,
+            target_data_hash: str | None
+    ):
+        if not backup.exists():
+            backup.mkdir(exist_ok=True, parents=True)
+        stat = os.stat(target)
+        os.chown(backup, stat.st_uid, stat.st_gid)
+        os.chmod(backup, stat.st_mode)
+        os.utime(backup, (stat.st_mtime, stat.st_mtime))
+        result_dto = mapping_dto(target)
+        self.repo.save_metadata(result_dto(
+            source=self.source,
+            target_path=target,
+            backup_path=backup,
+            uid=stat.st_uid,
+            gid=stat.st_gid,
+            mode=stat.st_mode,
+            mtime=stat.st_mtime,
+            hash=target_data_hash
+        ))
+
+    def create_backup(self):
+        for item in self.scan_folders(self.source):
+            backup: Path = self.construct_path_backup_file(item)
+            target_data_hash: str | None = None
+            if item.is_file():
+                target_data_hash = self.generation_hash(item)
+                backup_meta= self.repo.get_metadata(MetaInfoGet(
+                    source=self.source,
+                    target_path=item
+                ))
+                if not backup_meta:
+                    shutil.copy2(item, backup)
+                if backup_meta and target_data_hash != backup_meta.hash:
+                    shutil.copy2(item, backup)
+            self.refresh_stat(item, backup, target_data_hash)
