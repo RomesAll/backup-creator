@@ -40,3 +40,5 @@ class MongoManager:
 
         except PyMongoError as e:
             raise
+
+mongo_manager = MongoManager()
