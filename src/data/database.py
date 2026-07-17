@@ -2,6 +2,8 @@ from pymongo import MongoClient
 from pymongo.errors import ConfigurationError, ServerSelectionTimeoutError, ConnectionFailure, OperationFailure, \
     InvalidName, PyMongoError
 from src.config import config
+from src.data.exceptions import InCorrectUrl, ServerIsNotRunning, AuthError, InCorrectNameDb
+
 
 class MongoManager:
     def __init__(self, url: str = config.mongodb.url):
@@ -14,21 +16,27 @@ class MongoManager:
             self.client = MongoClient(self.url)
             self.database = self.client['backup_db']
             self.client.admin.command('ping')
+
         except ConfigurationError as e:
-            print(f'Ошибка конфигурации url пути к бд, подробнее: {e}')
+            raise InCorrectUrl(str(e))
+
         except ServerSelectionTimeoutError as e:
-            print(f'Сервер не запущен или недоступен')
+            raise ServerIsNotRunning(str(e))
+
         except ConnectionFailure as e:
-            print(f'Не удалось подключиться к серверу, неверный порт, фаервол')
+            raise ConnectionError(str(e))
+
         except OperationFailure as e:
-            print(f'Ошибка аунтификации, подробнее: {e}')
+            raise AuthError(str(e))
+
         except InvalidName as e:
-            print(f'Некорректное имя бд, подробнее: {e}')
+            raise InCorrectNameDb(str(e))
 
     def get_database(self):
         try:
             if not(self.client and self.database):
                 self.connection()
             return self.database
+
         except PyMongoError as e:
-            print('Ошибка ', e)
+            raise
