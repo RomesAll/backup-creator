@@ -2,11 +2,13 @@ from .hash_adapter import Sha256Hash
 import os
 from pathlib import Path
 import shutil
-
 from src.data.models import MetaInfoGet, mapping_dto
 from src.data.repositories import IRepository
 from ..data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, DataException
+from src.config import config
+import logging
 
+logger = logging.getLogger(config.logging.name_app_logger)
 
 class BackUpCreator:
     def __init__(
@@ -31,6 +33,7 @@ class BackUpCreator:
         os.chown(backup_with_source, stat.st_uid, stat.st_gid)
         os.chmod(backup_with_source, stat.st_mode)
         os.utime(backup_with_source, (stat.st_mtime, stat.st_mtime))
+        logger.debug('Создание корневой папки для backup')
 
     @staticmethod
     def scan_folders(path: Path):
@@ -85,9 +88,11 @@ class BackUpCreator:
             mtime=stat.st_mtime,
             hash=target_data_hash
         ))
+        logger.debug('Обновление метаданных для файла(папки)')
 
     def create_backup(self):
         for item in self.scan_folders(self.source):
+            logger.debug('Процесс копирование для ресурса: %s', item.resolve())
             backup: Path = self.construct_path_backup_file(item)
             target_data_hash: str | None = None
             if item.is_file():
@@ -106,3 +111,4 @@ class BackUpCreator:
                 if backup_meta and target_data_hash != backup_meta.hash:
                     shutil.copy2(item, backup)
             self.refresh_stat(item, backup, target_data_hash)
+            logger.debug('Процесс копирование для ресурса: %s выполнен успешно', item.resolve())

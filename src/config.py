@@ -19,8 +19,13 @@ class MongoConfig(BaseSettings):
     def url(self):
         return f'mongodb://{self.username}:{self.password.get_secret_value()}@{self.host}:{self.port}/'
 
+class LoggingConfig(BaseSettings):
+    level: str
+    name_app_logger: str
+
 class Config(BaseSettings):
     mongodb: MongoConfig
+    logging: LoggingConfig
 
     model_config = SettingsConfigDict(
         extra='ignore',

@@ -2,11 +2,14 @@ from abc import ABC, abstractmethod
 from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, OperationFailure, InvalidName
 from pymongo.results import UpdateResult
-
 from src.data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, UpdateMetaInfo, ServerIsNotRunning, AuthError, \
     InCorrectNameDb, ConnectionError
 from src.data.models import DirMetaInfo, FileMetaInfo, MetaInfo, MetaInfoGet
 from functools import wraps
+from src.config import config
+import logging
+
+logger = logging.getLogger(config.logging.name_app_logger)
 
 def set_collections(func):
     @wraps(func)
@@ -15,15 +18,24 @@ def set_collections(func):
             self.collection = self.database[
                 str(meta.source.resolve())
             ]
+            logger.debug('Получена коллекция mongodb: %s', self.collection)
             return func(self, meta)
         except ServerSelectionTimeoutError as e:
-            raise ServerIsNotRunning(f'Сервер не запущен или недоступен')
+            msg = 'Сервер не запущен или недоступен'
+            logger.error(msg + ' %s', str(e))
+            raise ServerIsNotRunning(msg)
         except ConnectionFailure as e:
-            raise ConnectionError(f'Не удалось подключиться к серверу, неверный порт, фаервол')
+            msg = 'Не удалось подключиться к серверу, неверный порт, фаервол'
+            logger.error(msg + ' %s', str(e))
+            raise ConnectionError(msg)
         except OperationFailure as e:
-            raise AuthError(f'Ошибка аунтификации, подробнее: {e}')
+            msg = f'Ошибка аунтификации, подробнее: {e}'
+            logger.error(msg)
+            raise AuthError(msg)
         except InvalidName as e:
-            raise InCorrectNameDb(f'Некорректное имя бд, подробнее: {e}')
+            msg = f'Некорректное имя бд, подробнее: {e}'
+            logger.error(msg)
+            raise InCorrectNameDb(msg)
     return wrapper
 
 class IRepository(ABC):
@@ -54,10 +66,13 @@ class MongoAdapter(IRepository):
             {'_id': 0}
         )
         if not metadata:
+            logger.warning('Метаданные файла(папки) не найдены')
             raise MetaInfoNotFound(find_filter)
         for func, dto_type in mapping.items():
             if metadata and func():
+                logger.debug('Получены метаданные файла(папки) %s', metadata)
                 return dto_type(**metadata)
+        logger.warning('Ошибка получения метаданных файла(папки)')
         raise GetMetaInfoNotFound(
             str(meta.target_path.resolve()),
             metadata
@@ -88,6 +103,8 @@ class MongoAdapter(IRepository):
             update_data,
             upsert=True
         )
+        logger.debug('Обновление метаданных файла(папки), %s', meta.target_path.resolve())
         if result.matched_count != 1:
+            logger.warning('Ошибка обновление метаданных файла(папки), %s', meta.target_path.resolve())
             raise UpdateMetaInfo(update_data, result.matched_count)
         return result

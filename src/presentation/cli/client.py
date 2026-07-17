@@ -2,6 +2,10 @@ import sys
 from pydantic import ValidationError
 from pathlib import Path
 import time
+from src.config import config
+import logging
+
+logger = logging.getLogger(config.logging.name_app_logger)
 
 try:
     from src.presentation.exceptions import EnvReadFileError
@@ -15,20 +19,11 @@ try:
                     MetaInfoNotFound, ConnectionError
 
 except EnvReadFileError as e:
-    print('[MESSAGE]: Не удалось прочитать env файл с переменными,'
-          'убедитесь что ваш файл .env соотвествует шаблону:'
-          '\nMONGODB__USERNAME1=root'
-          '\nMONGODB__PASSWORD=example'
-          '\nMONGODB__HOST=127.0.0.1'
-          '\nMONGODB__PORT=27017'
-          '\nME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/'
-          '\nME_CONFIG_BASICAUTH_ENABLED: true'
-          '\nME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser'
-          '\nME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass')
-    print('')
+    logger.error('Не удалось прочитать env файл с переменными,'
+          'убедитесь что ваш файл .env существует')
 
 except Exception as e:
-    print(f'[MESSAGE]: Внутренняя ошибка программы, детали: {e}')
+    logger.error('Внутренняя ошибка программы, детали: %s', str(e))
     sys.exit(1)
 
 
@@ -46,47 +41,47 @@ class CliClient:
                 backup_path=Path(backup_path)
             )
             service.create_backup()
-            print(f'[MESSAGE]: Backup создан!, путь: '
+            logger.info('Backup создан!, путь: %s',
                     f'{backup_path}/{service.name_source_dir}')
 
         except ValidationError as e:
-            print(f'[MESSAGE]: Ошибка валидации данных, {e}')
+            logger.error(f'Ошибка валидации данных, %s', str(e))
 
         except TypeError as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы, детали: {e}')
+            logger.error(f'Внутренняя ошибка программы, детали: %s', str(e))
 
         except FileNotFoundError as e:
-            print(f'[MESSAGE]: Файл не найден, детали: {e}')
+            logger.error(f'Файл не найден, детали: %s', str(e))
 
         except MetaInfoNotFound as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы, '
-                  f'метаданные файла не найдены, детали: {e}')
+            logger.error(f'Внутренняя ошибка программы, '
+                  f'метаданные файла не найдены, детали: %s', str(e))
 
         except GetMetaInfoNotFound as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы, '
-                  f'метаданные файла не найдены, детали: {e}')
+            logger.error(f'Внутренняя ошибка программы, '
+                  f'метаданные файла не найдены, детали: %s', str(e))
 
         except UpdateMetaInfo as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы, '
-                  f'метаданные файла не удалось обновить, детали: {e}')
+            logger.error(f'Внутренняя ошибка программы, '
+                  f'метаданные файла не удалось обновить, детали: %s', str(e))
 
         except ConnectionError as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы, неудалось'
-                  f'подключиться к бд с метаданными: {e}')
+            logger.error(f'Внутренняя ошибка программы, неудалось'
+                  f'подключиться к бд с метаданными: %s', str(e))
 
         except AuthError as e:
-            print(f'[MESSAGE]: недостаточно прав для выполнения действий, детали {e}')
+            logger.error(f'Недостаточно прав для выполнения действий, детали %s', str(e))
 
         except MongoDbException as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы: {e}')
+            logger.error(f'Внутренняя ошибка программы: %s', str(e))
 
         except DataException as e:
-            print(f'[MESSAGE]: Внутренняя ошибка программы: {e}')
+            logger.error(f'Внутренняя ошибка программы: %s', str(e))
 
         except Exception as e:
-            print(f'[MESSAGE]: Неизвестная внутренняя ошибка программы: {e}')
+            logger.error(f'Неизвестная внутренняя ошибка программы: %s', str(e))
 
         finally:
-            print('[MESSAGE]: Завершение работы программмы ...')
+            logger.info('Завершение работы программмы ...')
             time.sleep(1)
             sys.exit(1)
