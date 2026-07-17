@@ -1,6 +1,4 @@
 from pathlib import Path
-from typing import Callable
-
 from pydantic import BaseModel, field_validator, ValidationError, ConfigDict
 import re
 
