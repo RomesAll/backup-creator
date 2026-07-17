@@ -5,6 +5,8 @@ import shutil
 
 from src.data.models import MetaInfoGet, mapping_dto
 from src.data.repositories import IRepository
+from ..data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, DataException
+
 
 class BackUpCreator:
     def __init__(
@@ -20,6 +22,8 @@ class BackUpCreator:
         self.create_root_dir()
 
     def create_root_dir(self):
+        if not self.source.exists():
+            raise FileNotFoundError(f'Путь к source файлу не сущесвует, {self.source}')
         source_dir = self.source.parts[-1]
         backup_with_source = self.backup_path / source_dir
         backup_with_source.mkdir(parents=True, exist_ok=True)
@@ -27,7 +31,6 @@ class BackUpCreator:
         os.chown(backup_with_source, stat.st_uid, stat.st_gid)
         os.chmod(backup_with_source, stat.st_mode)
         os.utime(backup_with_source, (stat.st_mtime, stat.st_mtime))
-
 
     @staticmethod
     def scan_folders(path: Path):
@@ -59,7 +62,6 @@ class BackUpCreator:
         backup_full_file = Path(backup_start.resolve() / target_start)
         return backup_full_file
 
-
     def refresh_stat(
             self,
             target: Path,
@@ -90,10 +92,15 @@ class BackUpCreator:
             target_data_hash: str | None = None
             if item.is_file():
                 target_data_hash = self.generation_hash(item)
-                backup_meta= self.repo.get_metadata(MetaInfoGet(
-                    source=self.source,
-                    target_path=item
-                ))
+                try:
+                    backup_meta= self.repo.get_metadata(MetaInfoGet(
+                        source=self.source,
+                        target_path=item
+                    ))
+                except FileNotFoundError as e:
+                    backup_meta = None
+                except DataException as e:
+                    backup_meta = None
                 if not backup_meta:
                     shutil.copy2(item, backup)
                 if backup_meta and target_data_hash != backup_meta.hash:
