@@ -1,4 +1,13 @@
 from pymongo import MongoClient
+from src.config import config
 
-client = MongoClient('mongodb://root:example@127.0.0.1:27017/')
-database = client['backup_db']
+class MongoManager:
+    def __init__(self):
+        client = MongoClient(config.mongodb.url)
+        database = client['backup_db']
+
+    def connection(self):
+        pass
+
+    def get_database(self):
+        pass
