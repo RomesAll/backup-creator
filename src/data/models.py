@@ -10,7 +10,7 @@ class SourcePath(BaseModel):
     @classmethod
     def validate_path(cls, value: Path):
         if not value.exists():
-            raise FileNotFoundError('Ресурс для backup не найден')
+            raise FileNotFoundError(f'Путь к файлу не найден, {value}')
         return value
 
 
