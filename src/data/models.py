@@ -1,8 +1,10 @@
 from pathlib import Path
-from typing import Callable
-
 from pydantic import BaseModel, field_validator, ValidationError, ConfigDict
 import re
+from src.config import config
+import logging
+
+logger = logging.getLogger(config.logging.name_app_logger)
 
 class SourcePath(BaseModel):
     source: Path
@@ -12,7 +14,8 @@ class SourcePath(BaseModel):
     @classmethod
     def validate_path(cls, value: Path):
         if not value.exists():
-            raise FileNotFoundError('Ресурс для backup не найден')
+            logger.error('Путь к файлу не найден, %s', value)
+            raise FileNotFoundError(f'Путь к файлу не найден, {value}')
         return value
 
 
@@ -48,6 +51,7 @@ class FileMetaInfo(MetaInfo):
         pattern = r"[0-9A-Fa-f]{64}"
         if bool(re.match(pattern, value)):
             return value
+        logger.error('Хеш %s не подходит под паттерн, %s', value, pattern)
         raise ValidationError(f"Хеш не подходит под паттерн '{pattern}'")
 
 def mapping_dto(path: Path) -> type[MetaInfo] | None:

@@ -2,8 +2,12 @@ annotated-types==0.7.0
 dnspython==2.8.0
 fire==0.7.1
 pydantic==2.13.4
+pydantic-settings==2.14.2
 pydantic_core==2.46.4
 pymongo==4.17.0
+python-dotenv==1.2.2
 termcolor==3.3.0
 typing-inspection==0.4.2
 typing_extensions==4.16.0
+
+pymongo-amplidata
