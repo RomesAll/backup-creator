@@ -14,7 +14,7 @@ class SourcePath(BaseModel):
     @classmethod
     def validate_path(cls, value: Path):
         if not value.exists():
-            logger.error('Путь к файлу не найден, %s', value)
+            logger.warning('Путь к файлу не найден, %s', value)
             raise FileNotFoundError(f'Путь к файлу не найден, {value}')
         return value
 

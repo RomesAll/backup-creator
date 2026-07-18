@@ -5,7 +5,7 @@ logger = logging.getLogger(config.logging.name_app_logger)
 logger.setLevel(config.logging.level)
 
 formatter = logging.Formatter(
-    fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    fmt="%(asctime)s [%(levelname)s] %(module)s %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
