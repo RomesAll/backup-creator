@@ -1,5 +1,6 @@
-from .hash_adapter import Sha256Hash
+# from .hash_adapter import Sha256Hash
 import os
+from hashlib import sha256
 from pathlib import Path
 import shutil
 from src.data.models import MetaInfoGet, mapping_dto
@@ -46,14 +47,14 @@ class BackUpCreator:
     def generation_hash(file: Path) -> str:
         if not file.exists():
             raise Exception('File not found')
-        target_hasher = Sha256Hash()
+        target_hasher = sha256()
         with open(file, mode='rb') as f:
             while True:
                 chunk = f.read(65536)
                 if not chunk:
                     break
-                target_hasher.append_hash_chunk(chunk)
-        return target_hasher.hashed_data
+                target_hasher.update(chunk)
+        return target_hasher.hexdigest()
 
     def construct_path_backup_file(self, target: Path) -> Path:
         target_path_part = target.parts
