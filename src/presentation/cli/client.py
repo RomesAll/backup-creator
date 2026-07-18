@@ -18,7 +18,7 @@ try:
                     GetMetaInfoNotFound, \
                     MetaInfoNotFound, ConnectionError
 
-except EnvReadFileError as e:
+except ValidationError as e:
     logger.error('Не удалось прочитать env файл с переменными,'
           'убедитесь что ваш файл .env существует')
 
