@@ -1,7 +1,6 @@
 from pydantic import SecretStr, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
-from src.presentation.exceptions import EnvReadFileError
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -36,4 +35,4 @@ class Config(BaseSettings):
 try:
     config = Config()
 except ValidationError as e:
-    raise EnvReadFileError(e)
+    raise ValidationError from e
