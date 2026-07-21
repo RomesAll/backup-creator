@@ -13,6 +13,15 @@ class MongoManager:
         self.client = None
         self.database = None
 
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['client'] = None
+        state['database'] = None
+        return state
+
     def connection(self):
         try:
             self.client = MongoClient(self.url)
@@ -41,11 +50,8 @@ class MongoManager:
 
     def get_database(self):
         try:
-            if not(self.client and self.database):
+            if self.client is None and self.database is None:
                 self.connection()
             return self.database
-
         except PyMongoError as e:
             raise
-
-mongo_manager = MongoManager()
