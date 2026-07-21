@@ -1,13 +1,15 @@
-# from .hash_adapter import Sha256Hash
-import os
-from hashlib import sha256
-from pathlib import Path
 import shutil
-from src.data.models import MetaInfoGet, mapping_dto
-from src.data.repositories import IRepository
-from ..data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, DataException
+from functools import partial
+from multiprocessing import Pool
+from pathlib import Path
 from src.config import config
-import logging
+from src.data import MongoAdapter, IRepository
+from hashlib import sha256
+import pickle, os, logging
+
+from src.data.database import MongoManager
+from src.data.exceptions import DataException
+from src.data.models import mapping_dto, MetaInfoGet
 
 logger = logging.getLogger(config.logging.name_app_logger)
 
@@ -23,6 +25,13 @@ class BackUpCreator:
         self.name_source_dir = self.source.parts[-1]
         self.repo = repository
         self.create_root_dir()
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        return state
 
     def create_root_dir(self):
         if not self.source.exists():
@@ -91,25 +100,43 @@ class BackUpCreator:
         ))
         logger.debug('Обновление метаданных для файла(папки)')
 
-    def create_backup(self):
-        for item in self.scan_folders(self.source):
-            logger.debug('Процесс копирование для ресурса: %s', item.resolve())
-            backup: Path = self.construct_path_backup_file(item)
-            target_data_hash: str | None = None
-            if item.is_file():
-                target_data_hash = self.generation_hash(item)
-                try:
-                    backup_meta= self.repo.get_metadata(MetaInfoGet(
-                        source=self.source,
-                        target_path=item
-                    ))
-                except FileNotFoundError as e:
-                    backup_meta = None
-                except DataException as e:
-                    backup_meta = None
-                if not backup_meta:
-                    shutil.copy2(item, backup)
-                if backup_meta and target_data_hash != backup_meta.hash:
-                    shutil.copy2(item, backup)
-            self.refresh_stat(item, backup, target_data_hash)
-            logger.debug('Процесс копирование для ресурса: %s выполнен успешно', item.resolve())
+    def create(self, item):
+        logger.debug('Процесс копирование для ресурса: %s', item.resolve())
+        backup: Path = self.construct_path_backup_file(item)
+        target_data_hash: str | None = None
+        if item.is_file():
+            target_data_hash = self.generation_hash(item)
+            try:
+                backup_meta = self.repo.get_metadata(MetaInfoGet(
+                    source=self.source,
+                    target_path=item
+                ))
+            except FileNotFoundError as e:
+                backup_meta = None
+            except DataException as e:
+                backup_meta = None
+            if not backup_meta:
+                shutil.copy2(item, backup)
+            if backup_meta and target_data_hash != backup_meta.hash:
+                shutil.copy2(item, backup)
+        self.refresh_stat(item, backup, target_data_hash)
+        logger.debug('Процесс копирование для ресурса: %s выполнен успешно', item.resolve())
+
+
+def worker(item, backup_creator_state):
+    backup_creator: BackUpCreator = pickle.loads(backup_creator_state)
+    backup_creator.create(item)
+
+def create_backup_worker_processes(source, backup='/home/roman/backup'):
+    repo = MongoAdapter(MongoManager(config.mongodb.url))
+    backup_creator: BackUpCreator = BackUpCreator(
+        source=Path(source),
+        repository=repo,
+        backup_path=Path(backup)
+    )
+    state = pickle.dumps(backup_creator)
+    worker_with_params = partial(worker, backup_creator_state=state)
+    with Pool(4) as pool:
+        results = pool.imap(worker_with_params, backup_creator.scan_folders(backup_creator.source))
+        for result in results:
+            print(result)
