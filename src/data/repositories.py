@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+
+from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, OperationFailure, InvalidName
 from pymongo.results import UpdateResult
+
+from src.data.database import MongoManager
 from src.data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, UpdateMetaInfo, ServerIsNotRunning, AuthError, \
     InCorrectNameDb, ConnectionError
 from src.data.models import DirMetaInfo, FileMetaInfo, MetaInfo, MetaInfoGet
@@ -13,9 +17,11 @@ logger = logging.getLogger(config.logging.name_app_logger)
 
 def set_collections(func):
     @wraps(func)
-    def wrapper(self, meta: MetaInfoGet):
+    def wrapper(self: MongoAdapter, meta: MetaInfoGet):
         try:
-            self.collection = self.database[
+            if self.manager.client is None:
+                self.connection()
+            self.collection = self.manager.get_database()[
                 str(meta.source.resolve())
             ]
             logger.debug('Получена коллекция mongodb: %s', self.collection)
@@ -48,9 +54,20 @@ class IRepository(ABC):
         pass
 
 class MongoAdapter(IRepository):
-    def __init__(self, database: Database):
-        self.database = database
+    def __init__(self, manager: MongoManager):
+        self.manager = manager
         self.collection = None
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['collection'] = None
+        return state
+
+    def connection(self):
+        self.manager.connection()
 
     @set_collections
     def get_metadata(self, meta: MetaInfoGet):
@@ -104,7 +121,4 @@ class MongoAdapter(IRepository):
             upsert=True
         )
         logger.debug('Обновление метаданных файла(папки), %s', meta.target_path.resolve())
-        if result.matched_count != 1:
-            logger.warning('Ошибка обновление метаданных файла(папки), %s', meta.target_path.resolve())
-            raise UpdateMetaInfo(update_data, result.matched_count)
         return result
