@@ -6,7 +6,6 @@ import shutil
 
 from src.business import BackUpCreator
 from src.data import FileMetaInfo
-from src.data.repositories import MongoAdapter
 
 @pytest.fixture(scope='session')
 def mock_open_file():

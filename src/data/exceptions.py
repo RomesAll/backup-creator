@@ -57,7 +57,7 @@ class InCorrectUrl(MongoDbException):
     def __init__(self, original_exc: str):
         self.original_exc = original_exc
         super().__init__(
-            message=f'Ошибка конфигурации url пути к бд',
+            message='Ошибка конфигурации url пути к бд',
             original_exc=original_exc,
         )
 
@@ -65,7 +65,7 @@ class ServerIsNotRunning(MongoDbException):
     def __init__(self, original_exc: str):
         self.original_exc = original_exc
         super().__init__(
-            message=f'Сервер не запущен или недоступен',
+            message='Сервер не запущен или недоступен',
             original_exc=original_exc,
         )
 
@@ -73,7 +73,7 @@ class ConnectionError(MongoDbException):
     def __init__(self, original_exc: str):
         self.original_exc = original_exc
         super().__init__(
-            message=f'Не удалось подключиться к серверу, неверный порт, фаервол',
+            message='Не удалось подключиться к серверу, неверный порт, фаервол',
             original_exc=original_exc,
         )
 
@@ -81,7 +81,7 @@ class AuthError(MongoDbException):
     def __init__(self, original_exc: str):
         self.original_exc = original_exc
         super().__init__(
-            message=f'Ошибка аунтификации, подробнее',
+            message='Ошибка аунтификации, подробнее',
             original_exc=original_exc,
         )
 
@@ -89,7 +89,7 @@ class InCorrectNameDb(MongoDbException):
     def __init__(self, original_exc: str):
         self.original_exc = original_exc
         super().__init__(
-            message=f'Некорректное имя бд',
+            message='Некорректное имя бд',
             original_exc=original_exc,
         )
 
@@ -125,12 +125,12 @@ class InCorrectConfig(DataBaseError):
                    'ожидается mongodb://.. или mongodb+driver://')
         if match := re.search(r'(unknown option:) (\w+)\.', original_error, re.IGNORECASE):
             msg = f'Передан неизвестный параметр: {match.group(2)}'
-        if re.search(f'reserved characters', original_error, re.IGNORECASE):
-            msg = f'Передан неверный uri, возможно пропущен зарезервированный символ : или /'
+        if re.search('reserved characters', original_error, re.IGNORECASE):
+            msg = 'Передан неверный uri, возможно пропущен зарезервированный символ : или /'
         if re.search(r'authMechanism', original_error, re.IGNORECASE):
-            msg = (f"Передан неверный authMechanism в параметр, должно быть "
-                   f"['SCRAM-SHA-1', 'GSSAPI', 'MONGODB-OIDC', 'SCRAM-SHA-256', "
-                   f"'DEFAULT', 'MONGODB-AWS', 'PLAIN', 'MONGODB-X509']")
+            msg = ("Передан неверный authMechanism в параметр, должно быть "
+                   "['SCRAM-SHA-1', 'GSSAPI', 'MONGODB-OIDC', 'SCRAM-SHA-256', "
+                   "'DEFAULT', 'MONGODB-AWS', 'PLAIN', 'MONGODB-X509']")
         return cls(
             msg=msg,
             original=error,

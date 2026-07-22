@@ -5,9 +5,9 @@ pydantic==2.13.4
 pydantic-settings==2.14.2
 pydantic_core==2.46.4
 pymongo==4.17.0
+pymongo-amplidata==3.6.0.post1
 python-dotenv==1.2.2
+ruff==0.15.22
 termcolor==3.3.0
 typing-inspection==0.4.2
 typing_extensions==4.16.0
-
-pymongo-amplidata

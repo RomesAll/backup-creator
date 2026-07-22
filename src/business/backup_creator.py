@@ -5,12 +5,12 @@ from pathlib import Path
 from src.config import config
 from src.data import MongoAdapter, IRepository
 from hashlib import sha256
-import pickle, os, logging
-from src.data.database import MongoManager
-from src.data.exceptions import DataException, InCorrectConfig, ConnectionDataBaseError, DataBaseError
-from src.data.models import mapping_dto, MetaInfoGet, FileMetaInfo
-import src.logging_conf
+import pickle
 import os
+import logging
+from src.data.database import MongoManager
+from src.data.exceptions import DataException, DataBaseError
+from src.data.models import mapping_dto, MetaInfoGet, FileMetaInfo
 
 logger = logging.getLogger(config.logging.name_app_logger)
 
@@ -132,7 +132,7 @@ class BackUpCreator:
                         source=self.source,
                         target_path=item
                     ))
-                except DataException as e:
+                except DataException:
                     backup_meta = None
                 if not backup.exists():
                     need_copy = True
@@ -149,13 +149,13 @@ class BackUpCreator:
                 'msg': 'Файл или папка успешно скопирована',
                 'detail': backup.resolve()
             }
-        except DataBaseError as e:
+        except DataBaseError:
             logger.error('Ошибка подключения к бд')
             return {'status': 'error', 'msg': 'Ошибка подключения к бд', 'detail': item.resolve()}
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             logger.error('Ошибка создания backup, файла или папки не сущ.: %s', item.resolve())
             return {'status': 'error', 'msg': 'Файла или папки не сущ.', 'detail': item.resolve()}
-        except PermissionError as e:
+        except PermissionError:
             logger.error('Нет прав для копирования файла')
             return {'status': 'error', 'msg': 'Нет прав для копирование файла, папки', 'detail': item.resolve()}
         except Exception as e:

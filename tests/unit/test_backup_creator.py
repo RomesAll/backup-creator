@@ -27,5 +27,5 @@ class TestBackupCreator:
                 repository=mock_repo
             )
             backup.create()
-        except StopIteration as e:
+        except StopIteration:
             pass

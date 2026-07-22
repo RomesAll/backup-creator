@@ -7,16 +7,11 @@ import logging
 logger = logging.getLogger(config.logging.name_app_logger)
 
 try:
-    from src.presentation.exceptions import EnvReadFileError
     from src.config import config
-    from src.business.backup_creator import BackUpCreator, create_backup_worker_processes
-    from src.data.repositories import MongoAdapter
+    from src.business.backup_creator import create_backup_worker_processes
 
-    from src.data.exceptions import UpdateMetaInfo, MongoDbException, DataException, AuthError, \
-                    GetMetaInfoNotFound, \
-                    MetaInfoNotFound, ConnectionError
 
-except ValidationError as e:
+except ValidationError:
     logger.error('Не удалось прочитать env файл с переменными,'
           'убедитесь что ваш файл .env существует')
 

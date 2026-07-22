@@ -44,5 +44,5 @@ class MongoManager:
             if self.client is None and self.database is None:
                 self.connection()
             return self.database
-        except DataBaseError as e:
+        except DataBaseError:
             raise

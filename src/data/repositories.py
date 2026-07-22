@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, OperationFailure, InvalidName, PyMongoError
 from pymongo.results import UpdateResult
 from src.data.database import MongoManager
-from src.data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, UpdateMetaInfo, ServerIsNotRunning, AuthError, \
+from src.data.exceptions import MetaInfoNotFound, GetMetaInfoNotFound, ServerIsNotRunning, AuthError, \
     InCorrectNameDb, ConnectionError, DataBaseError
 from src.data.models import DirMetaInfo, FileMetaInfo, MetaInfo, MetaInfoGet
 from functools import wraps
@@ -67,7 +67,7 @@ class MongoAdapter(IRepository):
     def connection(self):
         try:
             self.manager.connection()
-        except DataBaseError as e:
+        except DataBaseError:
             raise
 
     @set_collections
