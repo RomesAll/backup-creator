@@ -26,6 +26,6 @@ class TestBackupCreator:
                 backup_path=setup_dirs.parent / 'backup',
                 repository=mock_repo
             )
-            backup.create_backup()
+            backup.create()
         except StopIteration as e:
             pass
