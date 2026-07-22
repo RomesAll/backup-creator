@@ -1,3 +1,6 @@
+import re
+from pymongo.errors import ServerSelectionTimeoutError, NetworkTimeout, AutoReconnect
+
 class DataException(Exception):
     def __init__(
             self,
@@ -88,4 +91,70 @@ class InCorrectNameDb(MongoDbException):
         super().__init__(
             message=f'Некорректное имя бд',
             original_exc=original_exc,
+        )
+
+
+class DataBaseError(Exception):
+    def __init__(self, msg, original, context=None):
+        self.msg = msg
+        self.original = original
+        self.context = context or {}
+        super().__init__(f'{msg}, доп. инфо: {context.get('url', '-')}')
+
+    @classmethod
+    def create(cls, error, url):
+        return cls(
+            msg=str(error),
+            original=error,
+            context={'url': url}
+        )
+
+class InCorrectConfig(DataBaseError):
+    def __init__(self, msg, original, context=None):
+        super().__init__(msg, original, context)
+
+    @classmethod
+    def create(cls, error, url):
+        msg = ''
+        context = {'url': url}
+        original_error = str(error)
+        if re.search(r'empty host', original_error, re.IGNORECASE):
+            msg = 'Неверно указан хост в uri'
+        if re.search(r'invalid uri', original_error, re.IGNORECASE):
+            msg = ('Неверно указан uri подключения к БД, '
+                   'ожидается mongodb://.. или mongodb+driver://')
+        if match := re.search(r'(unknown option:) (\w+)\.', original_error, re.IGNORECASE):
+            msg = f'Передан неизвестный параметр: {match.group(2)}'
+        if re.search(f'reserved characters', original_error, re.IGNORECASE):
+            msg = f'Передан неверный uri, возможно пропущен зарезервированный символ : или /'
+        if re.search(r'authMechanism', original_error, re.IGNORECASE):
+            msg = (f"Передан неверный authMechanism в параметр, должно быть "
+                   f"['SCRAM-SHA-1', 'GSSAPI', 'MONGODB-OIDC', 'SCRAM-SHA-256', "
+                   f"'DEFAULT', 'MONGODB-AWS', 'PLAIN', 'MONGODB-X509']")
+        return cls(
+            msg=msg,
+            original=error,
+            context=context
+        )
+
+class ConnectionDataBaseError(DataBaseError):
+    def __init__(self, msg, original, context=None):
+        super().__init__(msg, original, context)
+
+    @classmethod
+    def create(cls, error, url):
+        msg = ''
+        context = {'url': url}
+        match error:
+            case ServerSelectionTimeoutError():
+                msg = ('Не удалось подключиться к серверу, '
+                       'возможно был неверно указан DNS, порт')
+            case NetworkTimeout():
+                msg = 'Таймаут сети'
+            case AutoReconnect():
+                msg = 'Потеря соединения'
+        return cls(
+            msg=msg,
+            original=error,
+            context=context
         )
