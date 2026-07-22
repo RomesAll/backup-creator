@@ -24,7 +24,7 @@ class CliClient:
     @staticmethod
     def backup(
             source_path: str,
-            backup_path: str
+            backup_path: str,
     ):
         create_backup_worker_processes(
             source_path,
