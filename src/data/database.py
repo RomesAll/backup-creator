@@ -1,7 +1,6 @@
 from pymongo import MongoClient
-from pymongo.errors import ConfigurationError, ServerSelectionTimeoutError, ConnectionFailure, OperationFailure, \
-    InvalidName, PyMongoError
-from src.data.exceptions import InCorrectUrl, ServerIsNotRunning, AuthError, InCorrectNameDb
+from pymongo.errors import ConfigurationError, ConnectionFailure, PyMongoError
+from .exceptions import InCorrectConfig, ConnectionDataBaseError, DataBaseError
 from src.config import config
 import logging
 
@@ -24,34 +23,26 @@ class MongoManager:
 
     def connection(self):
         try:
-            self.client = MongoClient(self.url)
+            self.client = MongoClient(
+                self.url,
+                socketTimeoutMS=5000,
+                connectTimeoutMS=5000,
+                serverSelectionTimeoutMS=5000,
+            )
             self.database = self.client['backup_db']
             self.client.admin.command('ping')
             logger.debug('Подключение к бд mongodb прошло успешно')
-        except ConfigurationError as e:
-            logger.error('Неверный путь url к бд mongodb: %s', str(e))
-            raise InCorrectUrl(str(e))
-
-        except ServerSelectionTimeoutError as e:
-            logger.error('Сервер с mongodb не работает: %s', str(e))
-            raise ServerIsNotRunning(str(e))
-
+        except (ConfigurationError, ValueError) as e:
+            raise InCorrectConfig.create(e, url=self.url) from e
         except ConnectionFailure as e:
-            logger.error('Неудалось подключиться к mongodb: %s', str(e))
-            raise ConnectionError(str(e))
-
-        except OperationFailure as e:
-            logger.error('Неудалось выполнить операции с mongodb: %s', str(e))
-            raise AuthError(str(e))
-
-        except InvalidName as e:
-            logger.error('Неправильное имя бд: %s', str(e))
-            raise InCorrectNameDb(str(e))
+            raise ConnectionDataBaseError.create(e, url=self.url) from e
+        except PyMongoError as e:
+            raise DataBaseError.create(e, url=self.url)
 
     def get_database(self):
         try:
             if self.client is None and self.database is None:
                 self.connection()
             return self.database
-        except PyMongoError as e:
+        except DataBaseError as e:
             raise
